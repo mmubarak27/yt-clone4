@@ -218,11 +218,15 @@ const Video = () => {
           </div>
         </div>
         <div className="pt-8">
-          {videos.map((video, i) => (
-            <Link key={i} to={`/video/${video.id}`}>
-              <RecommendVideo {...video} />
-            </Link>
-          ))}
+              {videos.map((video, i) => {
+  if (video.id !== id) {
+    return (
+      <Link key={i} to={`/video/${video.id}`}>
+        <RecommendVideo {...video} />
+      </Link>
+    );
+  }
+})}
         </div>
       </div>
     </div>
