@@ -26,43 +26,52 @@ const Video = () => {
   const user = useSelector(getUser);
 
   useEffect(() => {
-    if (id) {
-      const q = query(doc(db, "videos", id));
-      onSnapshot(q, (snapShot) => {
-        setData(snapShot.data());
+    const fetchData = async () => {
+      if (id) {
+        const q = query(doc(db, "videos", id));
+        onSnapshot(q, (snapShot) => {
+          setData(snapShot.data());
+        });
+        const commentsQuery = query(collection(db, "videos", id, "comments"));
+        onSnapshot(commentsQuery, (snapShot) => {
+          setComments(
+            snapShot.docs.map((doc) => ({
+              ...doc.data(),
+              id: doc.id,
+            }))
+          );
+        });
+      }
+    };
+    fetchData();
+  }, [id]);
+
+  useEffect(() => {
+    const authStateChanged = () => {
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          dispatch(setUser(user));
+        } else {
+          dispatch(setUser(null));
+        }
       });
-      const commentsQuery = query(collection(db, "videos", id, "comments"));
-      onSnapshot(commentsQuery, (snapShot) => {
-        setComments(
+    };
+    authStateChanged();
+  }, [dispatch]);
+
+  useEffect(() => {
+    const fetchVideos = async () => {
+      const q = query(collection(db, "videos"));
+      onSnapshot(q, (snapShot) => {
+        setVideos(
           snapShot.docs.map((doc) => ({
             ...doc.data(),
             id: doc.id,
           }))
         );
       });
-    }
-  }, [id]);
-
-  useEffect(() => {
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        dispatch(setUser(user));
-      } else {
-        dispatch(setUser(null));
-      }
-    });
-  }, []);
-
-  useEffect(() => {
-    const q = query(collection(db, "videos"));
-    onSnapshot(q, (snapShot) => {
-      setVideos(
-        snapShot.docs.map((doc) => ({
-          ...doc.data(),
-          id: doc.id,
-        }))
-      );
-    });
+    };
+    fetchVideos();
   }, []);
 
   const addComment = async (e) => {
@@ -78,7 +87,6 @@ const Video = () => {
       setComment("");
     }
   };
-
   return (
     <div className="py-20 px-9 bg-yt-black flex flex-row h-full">
       <div className="left flex-1">
