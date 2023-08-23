@@ -1,47 +1,39 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import Sidebar from "../components/Sidebar";
+import { CategoryItems } from "../static/data";
 import { collection, onSnapshot, query } from "firebase/firestore";
+import { auth, db } from "../firebase";
+import { Link } from "react-router-dom";
+import Video from "../components/Video";
+import { onAuthStateChanged } from "firebase/auth";
 import { useDispatch } from "react-redux";
 import { setUser } from "../slices/userSlice";
-import Sidebar from "../components/Sidebar";
-import Video from "../components/Video";
-import { auth, db } from "../firebase";
-import { onAuthStateChanged } from "firebase/auth";
-import { CategoryItems } from "../static/data";
 
 const Home = () => {
   const [videos, setVideos] = useState([]);
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const fetchVideos = async () => {
-      const q = query(collection(db, "videos"));
-      const unsubscribe = onSnapshot(q, (snapShot) => {
-        setVideos(
-          snapShot.docs.map((doc) => ({
-            ...doc.data(),
-            id: doc.id,
-          }))
-        );
-      });
-      return unsubscribe;
-    };
+    const q = query(collection(db, "videos"));
+    onSnapshot(q, (snapShot) => {
+      setVideos(
+        snapShot.docs.map((doc) => ({
+          ...doc.data(),
+          id: doc.id,
+        }))
+      );
+    });
+  }, []);
 
-    const unsubscribeFromAuth = onAuthStateChanged(auth, (user) => {
+  useEffect(() => {
+    onAuthStateChanged(auth, (user) => {
       if (user) {
         dispatch(setUser(user));
       } else {
         dispatch(setUser(null));
       }
     });
-
-    const unsubscribeVideos = fetchVideos();
-
-    return () => {
-      unsubscribeFromAuth();
-      unsubscribeVideos();
-    };
-  }, [dispatch]);
+  }, []);
 
   return (
     <>
@@ -59,15 +51,19 @@ const Home = () => {
         </div>
 
         <div className="pt-12 px-5 grid grid-cols-yt gap-x-3 gap-y-8">
-          {videos.map((video) => (
-            <Link to={`/video/${video.id}`} key={video.id}>
-              <Video {...video} />
-            </Link>
-          ))}
+          {videos.length === 0 ? (
+            <div className="h-[86vh]"></div>
+          ) : (
+            videos.map((video, i) => (
+              <Link to={`/video/${video.id}`} key={video.id}>
+                <Video {...video} />
+              </Link>
+            ))
+          )}
         </div>
       </div>
     </>
   );
 };
 
-export default Home; 
+export default Home;
